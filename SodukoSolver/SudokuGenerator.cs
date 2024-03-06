@@ -5,6 +5,7 @@ public class SodokuGenerator
 {
     static int[,] grid;
     static int[,] unsolvedGrid;
+    public static int soulutions;
 
     public SodokuGenerator()
     {
@@ -27,13 +28,10 @@ public class SodokuGenerator
 
         for (int i = 0; i < 81; i++)
         {
-            Vector2 pos = FindLeastEntropyCell(cells, rand);
-            int row = (int)pos.X;
-            int col = (int)pos.Y;
-            int value = cells[row, col].possibleValues[rand.Next(0, cells[row, col].possibleValues.Count)];
-            cells[row, col].value = value;
-            cells[row, col].possibleValues.Clear();
-            ReduceOtherCellPossiebiltys(row, col, value, cells);
+            (int, int) pos = FindLeastEntropyCell(cells, rand);
+            cells[pos.Item1, pos.Item2].value = cells[pos.Item1, pos.Item2].possibleValues[rand.Next(0, cells[pos.Item1, pos.Item2].possibleValues.Count)];
+            cells[pos.Item1, pos.Item2].possibleValues.Clear();
+            ReduceOtherCellPossiebiltys(pos.Item1, pos.Item2, cells[pos.Item1, pos.Item2].value, cells);
         }
 
         for (int i = 0; i < 9; i++)
@@ -44,12 +42,11 @@ public class SodokuGenerator
             }
         }
 
-
         Console.WriteLine("Sudoku generated succsesfully");
     }
-    Vector2 FindLeastEntropyCell(Cell[,] cells, Random rand)
+    (int, int) FindLeastEntropyCell(Cell[,] cells, Random rand)
     {
-        List<Vector2> leastEntropyCells = new List<Vector2>();
+        List<(int, int)> leastEntropyCells = new List<(int, int)>();
         int threshold = 9;
 
         for (int i = 0; i < cells.GetLength(0); i++)
@@ -62,76 +59,37 @@ public class SodokuGenerator
                 if (cells[i, j].possibleValues.Count < threshold)
                 {
                     leastEntropyCells.Clear();
-                    leastEntropyCells.Add(new Vector2(i, j));
+                    leastEntropyCells.Add((i, j));
                     threshold = cells[i, j].possibleValues.Count;
                 }
                 else if (cells[i, j].possibleValues.Count == threshold)
                 {
-                    leastEntropyCells.Add(new Vector2(i, j));
+                    leastEntropyCells.Add((i, j));
                 }
             }
         }
         return leastEntropyCells[rand.Next(0, leastEntropyCells.Count)];
     }
-    void ReduceOtherCellPossiebiltys(int row, int col, int value, Cell[,] cells)
+    void ReduceOtherCellPossiebiltys(int row, int col, int value, Cell[,] cellGrid)
     {
         for (int i = 0; i < 9; i++)
         {
-            if (cells[row, i].value == -1)
-                if (cells[row, i].possibleValues.Contains(value))
-                    cells[row, i].possibleValues.Remove(value);
+            if (cellGrid[row, i].value == -1)
+                if (cellGrid[row, i].possibleValues.Contains(value))
+                    cellGrid[row, i].possibleValues.Remove(value);
 
-            if (cells[i, col].value == -1)
-                if (cells[i, col].possibleValues.Contains(value))
-                    cells[i, col].possibleValues.Remove(value);
-        }
-
-        if (row <= 2)
-        {
-            if (col <= 2)
-            {
-                RemoveNumbersInSquere(0, 0, value, cells);
-            }
-            else if (col <= 5)
-            {
-                RemoveNumbersInSquere(0, 3, value, cells);
-            }
-            else
-            {
-                RemoveNumbersInSquere(0, 6, value, cells);
-            }
-        }
-        else if (row <= 5)
-        {
-            if (col <= 2)
-            {
-                RemoveNumbersInSquere(3, 0, value, cells);
-            }
-            else if (col <= 5)
-            {
-                RemoveNumbersInSquere(3, 3, value, cells);
-            }
-            else
-            {
-                RemoveNumbersInSquere(3, 6, value, cells);
-            }
-        }
-        else
-        {
-            if (col <= 2)
-            {
-                RemoveNumbersInSquere(6, 0, value, cells);
-            }
-            else if (col <= 5)
-            {
-                RemoveNumbersInSquere(6, 3, value, cells);
-            }
-            else
-            {
-                RemoveNumbersInSquere(6, 6, value, cells);
-            }
+            if (cellGrid[i, col].value == -1)
+                if (cellGrid[i, col].possibleValues.Contains(value))
+                    cellGrid[i, col].possibleValues.Remove(value);
         }
 
+        RemoveNumbersInSquere(RoundToNearestFromList(row, new List<int>() { 0, 3, 6 }), RoundToNearestFromList(col, new List<int>() { 0, 3, 6 }), value, cellGrid);
+
+    }
+    static int RoundToNearestFromList(int inputNum, List<int> integerList)
+    {
+        int closestNum = integerList.OrderBy(x => Math.Abs(x - inputNum)).First();
+        return closestNum;
     }
     void RemoveNumbersInSquere(int rowMin, int colMin, int value, Cell[,] cells)
     {
@@ -148,7 +106,7 @@ public class SodokuGenerator
 
     #endregion
 
-    public void GenerateUnsolvedGrid(int clues)
+    public void UnsolveSudoku(int attempts = 5)
     {
         for (int i = 0; i < 9; i++)
         {
@@ -158,53 +116,118 @@ public class SodokuGenerator
             }
         }
 
-        int holes = 81 - clues;
-        List<(int, int)> removedValues = new List<(int, int)>();
-
-        List<(int, int)> values = new List<(int, int)>();
-        for (int i = 0; i < 9; i++)
+        Random rand = new Random();
+        while (attempts > 0)
         {
-            for (int j = 0; j < 9; j++)
+            int row = rand.Next(0, 9);
+            int col = rand.Next(0, 9);
+            while (unsolvedGrid[row, col] == 0)
             {
-                values.Add((i, j));
+                row = rand.Next(0, 9);
+                col = rand.Next(0, 9);
             }
-        }
-        Random random = new Random();
-        int n = values.Count;
-        while (n > 1)
-        {
-            n--;
-            int k = random.Next(n + 1);
-            (int, int) value = values[k];
-            values[k] = values[n];
-            values[n] = value;
-        }
-
-        while (removedValues.Count < holes)
-        {
-            int row = values[values.Count].Item1;
-            int col = values[values.Count].Item2;
-            removedValues.Add(values[values.Count]);
-            values.RemoveAt(values.Count);
-
+            int backup = unsolvedGrid[row, col];
             unsolvedGrid[row, col] = 0;
 
-            int[,] copy = new int[9, 9];
-
+            int[,] copyGrid = new int[9, 9];
             for (int i = 0; i < 9; i++)
             {
                 for (int j = 0; j < 9; j++)
                 {
-                    copy[i, j] = unsolvedGrid[i, j];
+                    copyGrid[i, j] = unsolvedGrid[i, j];
                 }
             }
+
+            Console.WriteLine(soulutions);
+            SolveGrid(copyGrid);
+            if (soulutions != 1)
+            {
+                unsolvedGrid[row, col] = backup;
+                attempts--;
+            }
+            else
+            {
+            }
+            Console.WriteLine(soulutions);
         }
     }
 
-    void CheckForMultpleSoulutions()
+    bool SolveGrid(int[,] grid)
     {
-        
+        for (int row = 0; row < 9; row++)
+        {
+            for (int col = 0; col < 9; col++)
+            {
+                if (grid[row, col] == 0)
+                {
+                    for (int value = 1; value < 10; value++)
+                    {
+                        List<int> possibleValues = new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+                        for (int i = 0; i < 9; i++)
+                        {
+                            if (grid[row, i] != -1)
+                                if (possibleValues.Contains(grid[row, i]))
+                                    possibleValues.Remove(grid[row, i]);
+
+                            if (grid[i, col] != -1)
+                                if (possibleValues.Contains(grid[i, col]))
+                                    possibleValues.Remove(grid[i, col]);
+                        }
+                        int minRow = RoundToNearestFromList(row, new List<int>() { 0, 3, 6 });
+                        int minCol = RoundToNearestFromList(col, new List<int>() { 0, 3, 6 });
+
+                        for (int i = minRow; i < minRow + 3; i++)
+                        {
+                            for (int j = minCol; j < minCol + 3; j++)
+                            {
+                                if (grid[i, j] != -1)
+                                    if (possibleValues.Contains(grid[i, j]))
+                                        possibleValues.Remove(grid[i, j]);
+                            }
+                        }
+
+                        if (!possibleValues.Contains(value))
+                        {
+                            //the grid is compleatly filled
+                            if (CheckGrid(grid))
+                            {
+                                soulutions++;
+                                if (soulutions == 2)
+                                    return false;
+                                break;
+                            }
+                            else
+                            {
+                                Console.WriteLine("tja");
+                                return true;
+                                // if (SolveGrid(grid, count))
+                                // {
+                                //     return true;
+                                // }
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+        return false;
     }
+
+    bool CheckGrid(int[,] grid)
+    {
+        for (int row = 0; row < 9; row++)
+        {
+            for (int col = 0; col < 9; col++)
+            {
+                if (grid[row, col] == 0)
+                    return false;
+            }
+        }
+        return true;
+    }
+
 
     public void DrawSudoku()
     {
@@ -213,6 +236,18 @@ public class SodokuGenerator
             for (int j = 0; j < 9; j++)
             {
                 Console.Write(grid[i, j] + " ");
+            }
+            Console.WriteLine();
+        }
+    }
+
+    public void DrawSudokuUnsolved()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                Console.Write(unsolvedGrid[i, j] + " ");
             }
             Console.WriteLine();
         }
