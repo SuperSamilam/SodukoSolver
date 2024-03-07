@@ -1,15 +1,14 @@
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 
 public class SodokuGenerator
 {
-    static int[,] grid;
-    static int[,] unsolvedGrid;
-    public static int collapsedCells;
-    private Random rand;
-    Cell lastCell;
+    public static int[,] grid;
+    public static int[,] unsolvedGrid;
 
+    private Random rand;
     public static int soulutuons = 0;
     static int holes = 0;
 
@@ -32,7 +31,6 @@ public class SodokuGenerator
             }
         }
         FillGrid(cells);
-
     }
 
     #region Generation
@@ -119,7 +117,6 @@ public class SodokuGenerator
             }
         }
         RemoveFromGrid();
-        Console.WriteLine(soulutuons);
     }
 
     bool RemoveFromGrid()
@@ -174,67 +171,122 @@ public class SodokuGenerator
         return nonEmptyCells;
     }
 
-    bool FindAmountOfSolutions()
+    public bool FindAmountOfSolutions()
     {
-        Cell[,] gridCopy = new Cell[9, 9];
-        for (int i = 0; i < 9; i++)
-        {
-            for (int j = 0; j < 9; j++)
-            {
-                gridCopy[i, j] = new Cell();
-                if (unsolvedGrid[i, j] != 0)
-                {
-                    gridCopy[i, j].value = unsolvedGrid[i, j];
-                    gridCopy[i, j].colapsed = true;
-                }
-            }
-        }
+        soulutuons = 0;
 
-        SolveGrid(gridCopy);
+        Solve(unsolvedGrid, 0, 0);
 
         if (soulutuons >= 2)
             return false;
         return true;
     }
 
-    bool SolveGrid(Cell[,] cells)
+    public bool Solve(int[,] grid, int row, int col)
     {
-        List<(int, int)> pos = ShuffleList<(int, int)>(FindCell(cells));
-        for (int i = 0; i < pos.Count; i++)
+        if (row == 9)
         {
-            cells[pos[i].Item1, pos[i].Item2].possibleValues = ShuffleList<int>(cells[pos[i].Item1, pos[i].Item2].possibleValues);
-            for (int j = 0; j < cells[pos[i].Item1, pos[i].Item2].possibleValues.Count; j++)
+            soulutuons++;
+            return false;
+        }
+        else if (col == 9)
+        {
+            //Console.WriteLine("Col " + row);
+            Solve(grid, row + 1, 0);
+        }
+        else if (grid[row, col] != 0)
+        {
+            //Console.WriteLine("Prefilled");
+            Solve(grid, row, col + 1);
+        }
+        else
+        {
+            // for (int i = 0; i < 9; i++)
+            // {
+            //     for (int j = 0; j < 9; j++)
+            //     {
+            //         Console.Write(grid[i, j] + " ");
+            //     }
+            //     Console.WriteLine();
+            // }
+            // Console.WriteLine("Ready?");
+            // Console.ReadKey();
+            for (int i = 1; i < 10; i++)
             {
-                CollapseCellSolving(pos[i].Item1, pos[i].Item2, cells[pos[i].Item1, pos[i].Item2].possibleValues[j], cells);
-                if (CheckGrid())
+                if (IsValid(grid, row, col, i))
                 {
-                    soulutuons++;
-                    return false;
-                }
-                else
-                {
-                    if (SolveGrid(cells))
-                        return true;
+                    grid[row, col] = i;
+                    if (Solve(grid, row, col + 1))
+                        return false;
                     else
-                    {
-                        cells[pos[i].Item1, pos[i].Item2].value = 0;
-                        cells[pos[i].Item1, pos[i].Item2].colapsed = false;
-                        RecalculateAllCells(cells);
-                    }
-
+                        grid[row, col] = 0;
                 }
             }
+            return false;
         }
+
+        //soulutuons++;
         return false;
     }
 
-    bool CollapseCellSolving(int row, int col, int value, Cell[,] cells)
+    bool IsValid(int[,] grid, int row, int col, int value)
     {
-        cells[row, col].value = value;
-        cells[row, col].colapsed = true;
-        cells[row, col].possibleValues.Clear();
-        UpdateCorrsponingCells(row, col, grid[row, col], cells);
+        for (int i = 0; i < 9; i++)
+        {
+            if (i != col)
+                if (grid[row, i] == value)
+                    return false;
 
+            if (i != row)
+                if (grid[i, col] == value)
+                    return false;
+        }
+
+        int startRow = 0;
+        int startCol = 0;
+
+        if (row < 3)
+        {
+            if (col < 3)
+                startCol = 0;
+            else if (col < 6)
+                startCol = 3;
+            else
+                startCol = 6;
+            startRow = 0;
+        }
+        else if (row < 6)
+        {
+            if (col < 3)
+                startCol = 0;
+            else if (col < 6)
+                startCol = 3;
+            else
+                startCol = 6;
+            startRow = 3;
+        }
+        else
+        {
+            if (col < 3)
+                startCol = 0;
+            else if (col < 6)
+                startCol = 3;
+            else
+                startCol = 6;
+            startRow = 6;
+        }
+
+        for (int i = startRow; i < startRow + 3; i++)
+        {
+            for (int j = startCol; j < startCol + 3; j++)
+            {
+                if (i != row && j != col)
+                {
+                    if (grid[i, j] == value)
+                        return false;
+                }
+            }
+        }
         return true;
     }
 
@@ -300,6 +352,7 @@ public class SodokuGenerator
             }
         }
     }
+
     static List<T> ShuffleList<T>(List<T> list)
     {
         Random random = new Random();
@@ -314,6 +367,7 @@ public class SodokuGenerator
         }
         return list;
     }
+
     void RecalculateAllCells(Cell[,] cells)
     {
         for (int i = 0; i < 9; i++)
@@ -350,7 +404,7 @@ public class SodokuGenerator
         }
         return true;
     }
-    public void DrawSudoku()
+    public void DrawSudoku(int[,] grid)
     {
         for (int i = 0; i < 9; i++)
         {
@@ -362,31 +416,19 @@ public class SodokuGenerator
         }
     }
 
-    void DrawPossibliyes(Cell[,] cells)
+    public void SetSudoku(int[,] soduko, bool unsolved)
     {
-        for (int i = 0; i < 9; i++)
-        {
-            for (int j = 0; j < 9; j++)
-            {
-                Console.Write(cells[i, j].possibleValues.Count + " ");
-            }
-            Console.WriteLine();
-        }
-    }
-
-    public void DrawSudokuUnsolved()
-    {
-        for (int i = 0; i < 9; i++)
-        {
-            for (int j = 0; j < 9; j++)
-            {
-                Console.Write(unsolvedGrid[i, j] + " ");
-            }
-            Console.WriteLine();
-        }
+        if (unsolved)
+            unsolvedGrid = soduko;
+        else
+            grid = soduko;
     }
 
     #endregion
+
+
+
+
 }
 
 struct Cell
@@ -400,7 +442,7 @@ struct Cell
 
     public Cell()
     {
-        value = -1;
+        value = 0;
         possibleValues = new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
         colapsed = false;
     }
