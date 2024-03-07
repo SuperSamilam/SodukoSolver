@@ -1,27 +1,33 @@
-using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
-
-public class SodokuGenerator
+public class SudokuGenerator
 {
-    public static int[,] grid;
-    public static int[,] unsolvedGrid;
+    public static int[,] grid = new int[9,9];
+    public static int[,] unsolvedGrid = new int[9,9];
 
-    private Random rand;
     public static int soulutuons = 0;
     static int holes = 0;
 
+    private Random rand;
 
-    public SodokuGenerator()
+    public SudokuGenerator()
     {
         grid = new int[9, 9];
         unsolvedGrid = new int[9, 9];
         rand = new Random();
     }
 
-    public void GenerateSudoku()
+    //Generates a whole Sudou
+    public static void GenerateWholeSudoku()
     {
+        GenerateSudoku();
+        UnSolveSudoku();
+    }
+
+    #region Generation
+    
+    //Generates a solved Sudoku
+    public static void GenerateSudoku()
+    {
+        //Prepers the area and calls the reccurisve method
         Cell[,] cells = new Cell[9, 9];
         for (int i = 0; i < 9; i++)
         {
@@ -33,17 +39,18 @@ public class SodokuGenerator
         FillGrid(cells);
     }
 
-    #region Generation
-
-    bool FillGrid(Cell[,] cells)
+    //A recursive method to fill the sudoku with values that can be in that position
+    static bool FillGrid(Cell[,] cells)
     {
+        //Gets the cells with the least amount of possible values left and shuffels is so the placement will be random
         List<(int, int)> pos = ShuffleList<(int, int)>(FindCell(cells));
         for (int i = 0; i < pos.Count; i++)
-        {
+        {   
             cells[pos[i].Item1, pos[i].Item2].possibleValues = ShuffleList<int>(cells[pos[i].Item1, pos[i].Item2].possibleValues);
             for (int j = 0; j < cells[pos[i].Item1, pos[i].Item2].possibleValues.Count; j++)
             {
                 CollapseCell(pos[i].Item1, pos[i].Item2, cells[pos[i].Item1, pos[i].Item2].possibleValues[j], cells);
+                //If the grid is complete return true
                 if (CheckGrid())
                 {
                     return true;
@@ -53,7 +60,8 @@ public class SodokuGenerator
                     if (FillGrid(cells))
                         return true;
                     else
-                    {
+                    {   
+                        //This vaue didint work so reset it
                         cells[pos[i].Item1, pos[i].Item2].value = 0;
                         cells[pos[i].Item1, pos[i].Item2].colapsed = false;
                         grid[pos[i].Item1, pos[i].Item2] = 0;
@@ -65,7 +73,9 @@ public class SodokuGenerator
         }
         return false;
     }
-    List<(int, int)> FindCell(Cell[,] cells)
+
+    //Finds the cells with the least amount of possible values left
+    static List<(int, int)> FindCell(Cell[,] cells)
     {
         int threshold = 9;
         List<(int, int)> values = new List<(int, int)>();
@@ -91,7 +101,9 @@ public class SodokuGenerator
 
         return values;
     }
-    bool CollapseCell(int row, int col, int value, Cell[,] cells)
+   
+    //Marks the cell as completet
+    static bool CollapseCell(int row, int col, int value, Cell[,] cells)
     {
         cells[row, col].value = value;
         cells[row, col].colapsed = true;
@@ -102,200 +114,10 @@ public class SodokuGenerator
         return true;
     }
 
-    #endregion
-
-    #region UnSolve
-    public void UnSolveSudoku(int clues = 25)
+    //Updates all the cells next to this to only be able to contain the right values
+    static void UpdateCorrsponingCells(int row, int col, int value, Cell[,] cells)
     {
-        holes = 81 - clues;
-        Console.WriteLine(holes);
-        for (int i = 0; i < 9; i++)
-        {
-            for (int j = 0; j < 9; j++)
-            {
-                unsolvedGrid[i, j] = grid[i, j];
-            }
-        }
-        RemoveFromGrid();
-    }
-
-    bool RemoveFromGrid()
-    {
-        // Console.WriteLine(holes);
-        List<(int, int)> nonEmptyCells = ShuffleList<(int, int)>(GetNonEmptyCells());
-
-        int backUp;
-        for (int i = 0; i < nonEmptyCells.Count; i++)
-        {
-            backUp = unsolvedGrid[nonEmptyCells[i].Item1, nonEmptyCells[i].Item2];
-            unsolvedGrid[nonEmptyCells[i].Item1, nonEmptyCells[i].Item2] = 0;
-            holes--;
-
-            if (!FindAmountOfSolutions())
-            {
-                unsolvedGrid[nonEmptyCells[i].Item1, nonEmptyCells[i].Item2] = backUp;
-                holes++;
-                continue;
-            }
-
-            if (holes == 0)
-            {
-                return true;
-            }
-            else
-            {
-                if (RemoveFromGrid())
-                    return true;
-                else
-                {
-                    unsolvedGrid[nonEmptyCells[i].Item1, nonEmptyCells[i].Item2] = backUp;
-                    holes++;
-                }
-            }
-
-        }
-        return false;
-    }
-
-    List<(int, int)> GetNonEmptyCells()
-    {
-        List<(int, int)> nonEmptyCells = new List<(int, int)>();
-        for (int i = 0; i < 9; i++)
-        {
-            for (int j = 0; j < 9; j++)
-            {
-                if (unsolvedGrid[i, j] != 0)
-                    nonEmptyCells.Add((i, j));
-            }
-        }
-        return nonEmptyCells;
-    }
-
-    public bool FindAmountOfSolutions()
-    {
-        soulutuons = 0;
-
-        Solve(unsolvedGrid, 0, 0);
-
-        if (soulutuons >= 2)
-            return false;
-        return true;
-    }
-
-    public bool Solve(int[,] grid, int row, int col)
-    {
-        if (row == 9)
-        {
-            soulutuons++;
-            return false;
-        }
-        else if (col == 9)
-        {
-            //Console.WriteLine("Col " + row);
-            Solve(grid, row + 1, 0);
-        }
-        else if (grid[row, col] != 0)
-        {
-            //Console.WriteLine("Prefilled");
-            Solve(grid, row, col + 1);
-        }
-        else
-        {
-            // for (int i = 0; i < 9; i++)
-            // {
-            //     for (int j = 0; j < 9; j++)
-            //     {
-            //         Console.Write(grid[i, j] + " ");
-            //     }
-            //     Console.WriteLine();
-            // }
-            // Console.WriteLine("Ready?");
-            // Console.ReadKey();
-            for (int i = 1; i < 10; i++)
-            {
-                if (IsValid(grid, row, col, i))
-                {
-                    grid[row, col] = i;
-                    if (Solve(grid, row, col + 1))
-                        return false;
-                    else
-                        grid[row, col] = 0;
-                }
-            }
-            return false;
-        }
-
-        //soulutuons++;
-        return false;
-    }
-
-    bool IsValid(int[,] grid, int row, int col, int value)
-    {
-        for (int i = 0; i < 9; i++)
-        {
-            if (i != col)
-                if (grid[row, i] == value)
-                    return false;
-
-            if (i != row)
-                if (grid[i, col] == value)
-                    return false;
-        }
-
-        int startRow = 0;
-        int startCol = 0;
-
-        if (row < 3)
-        {
-            if (col < 3)
-                startCol = 0;
-            else if (col < 6)
-                startCol = 3;
-            else
-                startCol = 6;
-            startRow = 0;
-        }
-        else if (row < 6)
-        {
-            if (col < 3)
-                startCol = 0;
-            else if (col < 6)
-                startCol = 3;
-            else
-                startCol = 6;
-            startRow = 3;
-        }
-        else
-        {
-            if (col < 3)
-                startCol = 0;
-            else if (col < 6)
-                startCol = 3;
-            else
-                startCol = 6;
-            startRow = 6;
-        }
-
-        for (int i = startRow; i < startRow + 3; i++)
-        {
-            for (int j = startCol; j < startCol + 3; j++)
-            {
-                if (i != row && j != col)
-                {
-                    if (grid[i, j] == value)
-                        return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    #endregion
-
-    #region Generic
-
-    void UpdateCorrsponingCells(int row, int col, int value, Cell[,] cells)
-    {
+        //Checks the collum and row
         for (int i = 0; i < 9; i++)
         {
             if (!cells[row, i].colapsed)
@@ -341,7 +163,7 @@ public class SodokuGenerator
             startRow = 6;
         }
 
-
+        //Checks the grid it is in
         for (int i = startRow; i < startRow + 3; i++)
         {
             for (int j = startCol; j < startCol + 3; j++)
@@ -353,6 +175,197 @@ public class SodokuGenerator
         }
     }
 
+    #endregion
+
+    #region UnSolve
+    
+    //Adds the holes in the sudoku
+    public static void UnSolveSudoku(int clues = 25)
+    {
+        holes = 81 - clues;
+        Console.WriteLine(holes);
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                unsolvedGrid[i, j] = grid[i, j];
+            }
+        }
+        RemoveFromGrid();
+    }
+
+    //A reccursive method the remove holes if it can
+    static bool RemoveFromGrid()
+    {
+        List<(int, int)> nonEmptyCells = ShuffleList<(int, int)>(GetNonEmptyCells());
+
+        int backUp;
+        //Goes trhough all cells that it can to try set them to 0 if it cant reste
+        for (int i = 0; i < nonEmptyCells.Count; i++)
+        {
+            backUp = unsolvedGrid[nonEmptyCells[i].Item1, nonEmptyCells[i].Item2];
+            unsolvedGrid[nonEmptyCells[i].Item1, nonEmptyCells[i].Item2] = 0;
+            holes--;
+
+            //Finds if it is still solvable
+            if (!FindAmountOfSolutions())
+            {
+                unsolvedGrid[nonEmptyCells[i].Item1, nonEmptyCells[i].Item2] = backUp;
+                holes++;
+                continue;
+            }
+
+            if (holes == 0)
+            {
+                return true;
+            }
+            else
+            {
+                if (RemoveFromGrid())
+                    return true;
+                else
+                {
+                    unsolvedGrid[nonEmptyCells[i].Item1, nonEmptyCells[i].Item2] = backUp;
+                    holes++;
+                }
+            }
+
+        }
+        return false;
+    }
+
+    //Get all cells that does not have a 0
+    static List<(int, int)> GetNonEmptyCells()
+    {
+        List<(int, int)> nonEmptyCells = new List<(int, int)>();
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                if (unsolvedGrid[i, j] != 0)
+                    nonEmptyCells.Add((i, j));
+            }
+        }
+        return nonEmptyCells;
+    }
+
+    //Finds the amount of solutions a sudoku have
+    public static bool FindAmountOfSolutions()
+    {
+        soulutuons = 0;
+
+        GetSoultionAmount(unsolvedGrid, 0, 0);
+
+        if (soulutuons >= 2)
+            return false;
+        return true;
+    }
+
+    //A recusrive method that solves a sudoku
+    static bool GetSoultionAmount(int[,] grid, int row, int col)
+    {
+        if (row == 9)
+        {
+            soulutuons++;
+            return false;
+        }
+        else if (col == 9)
+        {
+            GetSoultionAmount(grid, row + 1, 0);
+        }
+        else if (grid[row, col] != 0)
+        {
+            GetSoultionAmount(grid, row, col + 1);
+        }
+        else
+        {
+            //if it can place try to place it if it doesnt work from there reset
+            for (int i = 1; i < 10; i++)
+            {
+                if (IsValid(grid, row, col, i))
+                {
+                    grid[row, col] = i;
+                    if (GetSoultionAmount(grid, row, col + 1))
+                        return false;
+                    else
+                        grid[row, col] = 0;
+                }
+            }
+            return false;
+        }
+
+        return false;
+    }
+
+    //Finds if a value can be placed at a cell
+    static bool IsValid(int[,] grid, int row, int col, int value)
+    {
+        //Checks the collum and row
+        for (int i = 0; i < 9; i++)
+        {
+            if (i != col)
+                if (grid[row, i] == value)
+                    return false;
+
+            if (i != row)
+                if (grid[i, col] == value)
+                    return false;
+        }
+
+        int startRow = 0;
+        int startCol = 0;
+
+        if (row < 3)
+        {
+            if (col < 3)
+                startCol = 0;
+            else if (col < 6)
+                startCol = 3;
+            else
+                startCol = 6;
+            startRow = 0;
+        }
+        else if (row < 6)
+        {
+            if (col < 3)
+                startCol = 0;
+            else if (col < 6)
+                startCol = 3;
+            else
+                startCol = 6;
+            startRow = 3;
+        }
+        else
+        {
+            if (col < 3)
+                startCol = 0;
+            else if (col < 6)
+                startCol = 3;
+            else
+                startCol = 6;
+            startRow = 6;
+        }
+
+        //Checks the subgrid
+        for (int i = startRow; i < startRow + 3; i++)
+        {
+            for (int j = startCol; j < startCol + 3; j++)
+            {
+                if (i != row && j != col)
+                {
+                    if (grid[i, j] == value)
+                        return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    #endregion
+
+    #region Generic
+
+    //Shuffels a generic list
     static List<T> ShuffleList<T>(List<T> list)
     {
         Random random = new Random();
@@ -368,7 +381,8 @@ public class SodokuGenerator
         return list;
     }
 
-    void RecalculateAllCells(Cell[,] cells)
+    //Recaulculates all the values in the grid to know what possible numbers can be there
+    static void RecalculateAllCells(Cell[,] cells)
     {
         for (int i = 0; i < 9; i++)
         {
@@ -392,7 +406,9 @@ public class SodokuGenerator
             }
         }
     }
-    bool CheckGrid()
+    
+    //Checks if there are any zeros in the grid
+    static bool CheckGrid()
     {
         for (int i = 0; i < 9; i++)
         {
@@ -404,7 +420,9 @@ public class SodokuGenerator
         }
         return true;
     }
-    public void DrawSudoku(int[,] grid)
+    
+    //Draws the grid
+    public static void DrawSudoku(int[,] grid)
     {
         for (int i = 0; i < 9; i++)
         {
@@ -416,7 +434,8 @@ public class SodokuGenerator
         }
     }
 
-    public void SetSudoku(int[,] soduko, bool unsolved)
+    //Sets the sudoku to the users input
+    public static void  SetSudoku(int[,] soduko, bool unsolved)
     {
         if (unsolved)
             unsolvedGrid = soduko;
@@ -426,9 +445,6 @@ public class SodokuGenerator
 
     #endregion
 
-
-
-
 }
 
 struct Cell
@@ -437,9 +453,6 @@ struct Cell
     public List<int> possibleValues;
     public bool colapsed;
 
-    public (int, int) CellCameFrom;
-
-
     public Cell()
     {
         value = 0;
@@ -447,11 +460,3 @@ struct Cell
         colapsed = false;
     }
 }
-
-struct OrderOperations
-{
-    int row, col;
-    List<int> options;
-    List<int> notValidOptions;
-}
-
