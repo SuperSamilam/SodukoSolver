@@ -18,6 +18,7 @@ public class SudokuGenerator
     //Loads the sudoku and makes the gameplay
     public static void Play(int clues)
     {
+        //Jag väljer arrays efteresom det har en set size och jag behöver inte öka strolketen i denna tillfälle
         int hints = Settings.hints;
         char[] row = new char[9] { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I' };
         char[] col = new char[9] { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
@@ -53,13 +54,18 @@ public class SudokuGenerator
 
             string resp = Console.ReadLine() ?? "";
 
-
+            if (resp.Length < 1)
+            {
+                Console.WriteLine("You didint enter anything");
+                continue;
+            }
 
             if (row.Contains(resp[0]))
             {
 
                 if (resp.Length < 2)
                 {
+                    Console.WriteLine("Correct Sytax is LetterNumber Value");
                     continue;
                 }
 
@@ -67,6 +73,7 @@ public class SudokuGenerator
                 {
                     if (resp.Length < 3)
                     {
+                        Console.WriteLine("Correct Sytax is LetterNumber Value");
                         continue;
                     }
                     if (col.Contains(resp[3]))
@@ -122,6 +129,10 @@ public class SudokuGenerator
             else if (resp[0] == '2')
             {
                 return;
+            }
+            else
+            {
+                Console.WriteLine("Correct Sytax is LetterNumber Value");
             }
 
         }
@@ -572,7 +583,7 @@ public class SudokuGenerator
                     Console.Write(grid[i, j] + " ");
                     Console.ForegroundColor = ConsoleColor.White;
                 }
-                else 
+                else
                 {
                     if (grid[i, j] != playergrid[i, j] && playergrid[i, j] != 0)
                     {

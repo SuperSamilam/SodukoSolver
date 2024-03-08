@@ -6,7 +6,7 @@ public static class Settings
         {"EN", new List<string>(){"Change your settings", "Change Language", "Change max hints", "Play with mistake alerter", "Go back", "Language have changed", "Syntax error, please follow this syntax: #operation #language", "Max hint value is now ", "Syntax error, please follow this syntax: #operation #number", "Play with mistake alerts are", "Syntax error, please follow this syntax: #operation #true_or_false"}},
         {"FI", new List<string>(){}}
     };
-    public static string lang { get; set; }
+    public static string lang { get; set; } 
 
     public static int hints { get; set; }
 
