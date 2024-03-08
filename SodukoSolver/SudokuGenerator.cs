@@ -1,7 +1,7 @@
 public class SudokuGenerator
 {
-    public static int[,] grid = new int[9,9];
-    public static int[,] unsolvedGrid = new int[9,9];
+    public static int[,] grid = new int[9, 9];
+    public static int[,] unsolvedGrid = new int[9, 9];
 
     public static int soulutuons = 0;
     static int holes = 0;
@@ -15,6 +15,118 @@ public class SudokuGenerator
         rand = new Random();
     }
 
+    //Loads the sudoku and makes the gameplay
+    public static void Play(int clues)
+    {
+        int hints = Settings.hints;
+        char[] row = new char[9] { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I' };
+        char[] col = new char[9] { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
+        GenerateWholeSudoku(clues);
+        Console.WriteLine("You are playing Sudoku");
+        Console.WriteLine("Select what location to place at with Row(A-H)Col(1-8) folloed by number");
+        Console.WriteLine("Ready? Press any button");
+        Console.ReadKey();
+
+        int[,] playerGrid = new int[9, 9];
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                playerGrid[i, j] = unsolvedGrid[i, j];
+            }
+        }
+
+        while (true)
+        {
+            Console.Clear();
+            DrawSudokuGame(grid, playerGrid, unsolvedGrid);
+            if (IsSudokuEqual(grid, playerGrid))
+            {
+                Console.WriteLine("You solved it great work");
+                Console.WriteLine("Press any key to go back");
+                Console.ReadKey();
+                return;
+            }
+
+            Console.WriteLine("1: hint, 2 quit");
+
+            string resp = Console.ReadLine() ?? "";
+
+
+
+            if (row.Contains(resp[0]))
+            {
+
+                if (resp.Length < 2)
+                {
+                    continue;
+                }
+
+                if (col.Contains(resp[1]))
+                {
+                    if (resp.Length < 3)
+                    {
+                        continue;
+                    }
+                    if (col.Contains(resp[3]))
+                    {
+                        if (char.IsDigit(resp[3]))
+                        {
+                            int value = (int)char.GetNumericValue(resp[3]);
+                            int rowIndex = Array.IndexOf(row, resp[0]);
+                            int colIndex = Array.IndexOf(col, resp[1]);
+
+                            if (unsolvedGrid[colIndex, rowIndex] != 0)
+                            {
+                                Console.WriteLine("Cant change that");
+                                Thread.Sleep(3000);
+                                continue;
+                            }
+
+                            playerGrid[colIndex, rowIndex] = value;
+                            Console.WriteLine("Value changed");
+                            Thread.Sleep(3000);
+                        }
+                    }
+                }
+
+            }
+            else if (resp[0] == '1')
+            {
+                if (hints == 0)
+                {
+                    Console.WriteLine("No hints left");
+                    Thread.Sleep(3000);
+                    continue;
+                }
+                else
+                {
+                    bool gavehint = false;
+                    for (int i = 0; i < 9 && !gavehint; i++)
+                    {
+                        for (int j = 0; j < 9 && !gavehint; j++)
+                        {
+                            if (playerGrid[i, j] != grid[i, j])
+                            {
+                                playerGrid[i, j] = grid[i, j];
+                                Console.WriteLine("Changed the value on " + row[i] + (j + 1) + ", hints left: " + hints);
+                                Thread.Sleep(3000);
+                                hints--;
+                                gavehint = true;
+                            }
+                        }
+                    }
+                }
+            }
+            else if (resp[0] == '2')
+            {
+                return;
+            }
+
+        }
+    }
+
     //Generates a whole Sudou
     public static void GenerateWholeSudoku()
     {
@@ -22,8 +134,14 @@ public class SudokuGenerator
         UnSolveSudoku();
     }
 
+    public static void GenerateWholeSudoku(int clues)
+    {
+        GenerateSudoku();
+        UnSolveSudoku(clues);
+    }
+
     #region Generation
-    
+
     //Generates a solved Sudoku
     public static void GenerateSudoku()
     {
@@ -45,7 +163,7 @@ public class SudokuGenerator
         //Gets the cells with the least amount of possible values left and shuffels is so the placement will be random
         List<(int, int)> pos = ShuffleList<(int, int)>(FindCell(cells));
         for (int i = 0; i < pos.Count; i++)
-        {   
+        {
             cells[pos[i].Item1, pos[i].Item2].possibleValues = ShuffleList<int>(cells[pos[i].Item1, pos[i].Item2].possibleValues);
             for (int j = 0; j < cells[pos[i].Item1, pos[i].Item2].possibleValues.Count; j++)
             {
@@ -60,7 +178,7 @@ public class SudokuGenerator
                     if (FillGrid(cells))
                         return true;
                     else
-                    {   
+                    {
                         //This vaue didint work so reset it
                         cells[pos[i].Item1, pos[i].Item2].value = 0;
                         cells[pos[i].Item1, pos[i].Item2].colapsed = false;
@@ -101,7 +219,7 @@ public class SudokuGenerator
 
         return values;
     }
-   
+
     //Marks the cell as completet
     static bool CollapseCell(int row, int col, int value, Cell[,] cells)
     {
@@ -178,12 +296,11 @@ public class SudokuGenerator
     #endregion
 
     #region UnSolve
-    
+
     //Adds the holes in the sudoku
     public static void UnSolveSudoku(int clues = 25)
     {
         holes = 81 - clues;
-        Console.WriteLine(holes);
         for (int i = 0; i < 9; i++)
         {
             for (int j = 0; j < 9; j++)
@@ -406,7 +523,7 @@ public class SudokuGenerator
             }
         }
     }
-    
+
     //Checks if there are any zeros in the grid
     static bool CheckGrid()
     {
@@ -420,12 +537,16 @@ public class SudokuGenerator
         }
         return true;
     }
-    
+
     //Draws the grid
     public static void DrawSudoku(int[,] grid)
     {
+        char[] col = new char[9] { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
+        Console.WriteLine("   A B C D E F G H I");
         for (int i = 0; i < 9; i++)
         {
+            Console.Write(col[i] + ": ");
             for (int j = 0; j < 9; j++)
             {
                 Console.Write(grid[i, j] + " ");
@@ -434,13 +555,61 @@ public class SudokuGenerator
         }
     }
 
+    //Draws the sudoku with different colors for clarificatoin for the user
+    public static void DrawSudokuGame(int[,] grid, int[,] playergrid, int[,] unsolvedGrid)
+    {
+        char[] col = new char[9] { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
+        Console.WriteLine("   A B C D E F G H I");
+        for (int i = 0; i < 9; i++)
+        {
+            Console.Write(col[i] + ": ");
+            for (int j = 0; j < 9; j++)
+            {
+                if (unsolvedGrid[i, j] != 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.Write(grid[i, j] + " ");
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+                else 
+                {
+                    if (grid[i, j] != playergrid[i, j] && playergrid[i, j] != 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write(playergrid[i, j] + " ");
+                        Console.ForegroundColor = ConsoleColor.White;
+                    }
+                    else
+                        Console.Write(playergrid[i, j] + " ");
+                }
+
+            }
+            Console.WriteLine();
+        }
+    }
+
     //Sets the sudoku to the users input
-    public static void  SetSudoku(int[,] soduko, bool unsolved)
+    public static void SetSudoku(int[,] soduko, bool unsolved)
     {
         if (unsolved)
             unsolvedGrid = soduko;
         else
             grid = soduko;
+    }
+
+    //checks if the sudoku is done
+    static bool IsSudokuEqual(int[,] grid, int[,] check)
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                if (grid[i, j] != check[i, j])
+                    return false;
+            }
+        }
+        return true;
     }
 
     #endregion

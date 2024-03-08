@@ -9,8 +9,8 @@ public static class Settings
     public static string lang { get; set; }
 
     public static int hints { get; set; }
-    public static bool playWithTeller { get; set; }
 
+    //Edits the settings
     public static void EditSettings()
     {
         while (true)
@@ -21,9 +21,9 @@ public static class Settings
             Console.WriteLine(localizor[lang][0]); //Change ur settings
             Console.WriteLine("1: " + localizor[lang][1]); //Change Language
             Console.WriteLine("2: " + localizor[lang][2]); //Change Max hints avaible
-            Console.WriteLine("3: " + localizor[lang][3]); //Play With Mistake Alerter
-            Console.WriteLine("4: " + localizor[lang][4]); //Quit
+            Console.WriteLine("3: " + localizor[lang][4]); //Quit
 
+            //edits the choosen setting
             string resp = Console.ReadLine() ?? "";
             if (resp[0] == '1')
                 if (localizor.Keys.Contains(resp.Substring(resp.IndexOf(' ') + 1).ToUpper()))
@@ -50,23 +50,6 @@ public static class Settings
                     Console.ForegroundColor = ConsoleColor.White;
                 }
             else if (resp[0] == '3')
-                if (resp.Substring(resp.IndexOf(' ') + 1).ToLower() == "true")
-                {
-                    playWithTeller = true;
-                    Console.WriteLine(localizor[lang][9]+ " on");
-                }
-                else if (resp.Substring(resp.IndexOf(' ') + 1).ToLower() == "false")
-                {
-                    playWithTeller = false;
-                    Console.WriteLine(localizor[lang][9] + " off");
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(localizor[lang][8]);
-                    Console.ForegroundColor = ConsoleColor.White;
-                }
-            else if (resp[0] == '4')
                 return;
         }
     }
