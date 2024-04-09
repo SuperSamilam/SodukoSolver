@@ -26,3 +26,4 @@ C:\Users\sam.lindfors\Documents\GitHub\SodukoSolver\SodukoSolver\obj\Debug\net7.
 C:\Users\sam.lindfors\Documents\GitHub\SodukoSolver\SodukoSolver\obj\Debug\net7.0\SodukoSolver.pdb
 C:\Users\sam.lindfors\Documents\GitHub\SodukoSolver\SodukoSolver\obj\Debug\net7.0\SodukoSolver.genruntimeconfig.cache
 C:\Users\sam.lindfors\Documents\GitHub\SodukoSolver\SodukoSolver\obj\Debug\net7.0\ref\SodukoSolver.dll
+C:\Users\sam.lindfors\Documents\GitHub\SodukoSolver\SodukoSolver\obj\Debug\net7.0\SodukoSolver.sourcelink.json

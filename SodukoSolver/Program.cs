@@ -1,7 +1,6 @@
 ﻿
 
 Random rand = new Random();
-Settings.lang = "EN";
 Settings.hints = 3;
 
 while (true)

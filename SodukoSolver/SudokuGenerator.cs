@@ -29,6 +29,7 @@ public class SudokuGenerator
         Console.WriteLine("Ready? Press any button");
         Console.ReadKey();
 
+        //Transforms the unsolved grid to the player grid so i dont lose the unsolved grid
         int[,] playerGrid = new int[9, 9];
         for (int i = 0; i < 9; i++)
         {
@@ -38,6 +39,7 @@ public class SudokuGenerator
             }
         }
 
+        //Gameplay Loop
         while (true)
         {
             Console.Clear();
@@ -60,9 +62,9 @@ public class SudokuGenerator
                 continue;
             }
 
-            if (row.Contains(resp[0]))
+            //Theese if statments will check if the input is correct, it will check if its long enogught and if the input is valid in the order it is intrsucted
+            if (row.Contains(resp.ToUpper()[0]))
             {
-
                 if (resp.Length < 2)
                 {
                     Console.WriteLine("Correct Sytax is LetterNumber Value");
@@ -80,10 +82,12 @@ public class SudokuGenerator
                     {
                         if (char.IsDigit(resp[3]))
                         {
+                            //Gets the value the user pased and assignins it to unsolevGrid
                             int value = (int)char.GetNumericValue(resp[3]);
                             int rowIndex = Array.IndexOf(row, resp[0]);
                             int colIndex = Array.IndexOf(col, resp[1]);
 
+                            //prefiled answers should not be able to change
                             if (unsolvedGrid[colIndex, rowIndex] != 0)
                             {
                                 Console.WriteLine("Cant change that");
@@ -101,6 +105,7 @@ public class SudokuGenerator
             }
             else if (resp[0] == '1')
             {
+                //Gives the first hint if its possible
                 if (hints == 0)
                 {
                     Console.WriteLine("No hints left");
@@ -128,6 +133,7 @@ public class SudokuGenerator
             }
             else if (resp[0] == '2')
             {
+                //You quit casue ur boring
                 return;
             }
             else
@@ -138,13 +144,7 @@ public class SudokuGenerator
         }
     }
 
-    //Generates a whole Sudou
-    public static void GenerateWholeSudoku()
-    {
-        GenerateSudoku();
-        UnSolveSudoku();
-    }
-
+    //Generates an sudoko and an unsolved version of it
     public static void GenerateWholeSudoku(int clues)
     {
         GenerateSudoku();
@@ -168,29 +168,33 @@ public class SudokuGenerator
         FillGrid(cells);
     }
 
-    //A recursive method to fill the sudoku with values that can be in that position
+    //A recursive method to fill the sudoku with values that can be in that position alogirthm based on WFC
     static bool FillGrid(Cell[,] cells)
     {
         //Gets the cells with the least amount of possible values left and shuffels is so the placement will be random
-        List<(int, int)> pos = ShuffleList<(int, int)>(FindCell(cells));
+        List<(int, int)> pos = ShuffleList<(int, int)>(FindCellsWithLeastEntropy(cells));
+        //Looping thought them to be availble to backtrack
         for (int i = 0; i < pos.Count; i++)
         {
+            //Shuffels the list of possible values for a cell so the grid will be more random
             cells[pos[i].Item1, pos[i].Item2].possibleValues = ShuffleList<int>(cells[pos[i].Item1, pos[i].Item2].possibleValues);
             for (int j = 0; j < cells[pos[i].Item1, pos[i].Item2].possibleValues.Count; j++)
             {
+                //Sets the value for the cell
                 CollapseCell(pos[i].Item1, pos[i].Item2, cells[pos[i].Item1, pos[i].Item2].possibleValues[j], cells);
-                //If the grid is complete return true
                 if (CheckGrid())
                 {
+                    //If the grid is complete return true
                     return true;
                 }
                 else
                 {
+                    //Call the method again - and try to compate the grid
                     if (FillGrid(cells))
                         return true;
                     else
                     {
-                        //This vaue didint work so reset it
+                        //This vaue didint work so reset it - the loop will contnue, if it dosent work it will return false
                         cells[pos[i].Item1, pos[i].Item2].value = 0;
                         cells[pos[i].Item1, pos[i].Item2].colapsed = false;
                         grid[pos[i].Item1, pos[i].Item2] = 0;
@@ -204,7 +208,7 @@ public class SudokuGenerator
     }
 
     //Finds the cells with the least amount of possible values left
-    static List<(int, int)> FindCell(Cell[,] cells)
+    static List<(int, int)> FindCellsWithLeastEntropy(Cell[,] cells)
     {
         int threshold = 9;
         List<(int, int)> values = new List<(int, int)>();
@@ -261,6 +265,7 @@ public class SudokuGenerator
         int startRow = 0;
         int startCol = 0;
 
+        //Finds teh 3x3 grid the number is in
         if (row < 3)
         {
             if (col < 3)
@@ -325,10 +330,11 @@ public class SudokuGenerator
     //A reccursive method the remove holes if it can
     static bool RemoveFromGrid()
     {
+        //shuffeling it for randomness
         List<(int, int)> nonEmptyCells = ShuffleList<(int, int)>(GetNonEmptyCells());
 
         int backUp;
-        //Goes trhough all cells that it can to try set them to 0 if it cant reste
+        //Goes trhough all cells that it can to try set them to 0 if it cant restet
         for (int i = 0; i < nonEmptyCells.Count; i++)
         {
             backUp = unsolvedGrid[nonEmptyCells[i].Item1, nonEmptyCells[i].Item2];
@@ -343,16 +349,19 @@ public class SudokuGenerator
                 continue;
             }
 
+            //Soduku is generated and done
             if (holes == 0)
             {
                 return true;
             }
             else
             {
+                //Remove another value from grid
                 if (RemoveFromGrid())
                     return true;
                 else
                 {
+                    //Reset the value
                     unsolvedGrid[nonEmptyCells[i].Item1, nonEmptyCells[i].Item2] = backUp;
                     holes++;
                 }
@@ -392,6 +401,7 @@ public class SudokuGenerator
     //A recusrive method that solves a sudoku
     static bool GetSoultionAmount(int[,] grid, int row, int col)
     {
+        //The entire grid have been itterated to
         if (row == 9)
         {
             soulutuons++;
@@ -399,24 +409,29 @@ public class SudokuGenerator
         }
         else if (col == 9)
         {
+            //It reached the end of this collumn, change row
             GetSoultionAmount(grid, row + 1, 0);
         }
         else if (grid[row, col] != 0)
         {
+            //ITs already filled
             GetSoultionAmount(grid, row, col + 1);
         }
         else
         {
-            //if it can place try to place it if it doesnt work from there reset
+            //Lopes thought each value a soduku grid can have
             for (int i = 1; i < 10; i++)
             {
                 if (IsValid(grid, row, col, i))
-                {
+                {   
+                    //It can be placed 
                     grid[row, col] = i;
+                    //If the souluton in the futrue is right return false so it will count all soulutons
                     if (GetSoultionAmount(grid, row, col + 1))
                         return false;
                     else
                         grid[row, col] = 0;
+                        //The value can not be the expted value anymore for further tests, so reset it. -- needs to be there because of it might the the last itteration
                 }
             }
             return false;
