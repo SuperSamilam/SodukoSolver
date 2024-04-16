@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SodukoSolver")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8f155c37ebe7ed01326098aace98143c97793fa8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+acfa2aac2d861cfbe50894656bb090f593237344")]
 [assembly: System.Reflection.AssemblyProductAttribute("SodukoSolver")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SodukoSolver")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

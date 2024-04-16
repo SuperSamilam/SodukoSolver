@@ -1,3 +1,7 @@
 {
-    "dotnet.defaultSolution": "SodukoSolver.sln"
+    "dotnet.defaultSolution": "SodukoSolver.sln",
+    "editor.tokenColorCustomizations": {
+        "comments": "",
+        "textMateRules": []
+    }
 }

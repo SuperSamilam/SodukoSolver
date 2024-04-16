@@ -120,6 +120,11 @@ namespace Sudoku
                 return false;
             }
 
+            if (input[0] == '1')
+            {
+                return false;
+            }
+
             if (!col.Contains(input[1]))
             {
                 Console.WriteLine("Wrong Input");
@@ -143,7 +148,6 @@ namespace Sudoku
                 Thread.Sleep(3000);
                 return false;
             }
-
 
             return true;
         }
